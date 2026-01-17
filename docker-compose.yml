@@ -70,7 +70,7 @@ services:
     restart: unless-stopped
     networks:
       - internal
-      - monitoring  # Available on shared network
+      - monitoring
     expose:
       - 4317  # OTLP gRPC receiver
       - 4318  # OTLP HTTP receiver

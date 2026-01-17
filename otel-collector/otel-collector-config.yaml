@@ -50,30 +50,30 @@ exporters:
   #   tls:
   #     insecure: true
 
-  # Logging exporter for debugging
-  logging:
-    loglevel: info
+  # Debug exporter for debugging
+  debug:
+    verbosity: normal
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resource, batch]
-      exporters: [logging]  # Add jaeger here if you want trace visualization
+      exporters: [debug]  # Add jaeger here if you want trace visualization
 
     metrics:
       receivers: [otlp, prometheus]
       processors: [memory_limiter, resource, batch]
-      exporters: [prometheus, logging]
+      exporters: [prometheus, debug]
 
     logs:
       receivers: [otlp]
       processors: [memory_limiter, resource, batch]
-      exporters: [logging]
+      exporters: [debug]
 
   extensions: []
 
-  # Health check
+  # Simplified telemetry configuration
   telemetry:
     metrics:
-      address: 0.0.0.0:8888
+      level: normal

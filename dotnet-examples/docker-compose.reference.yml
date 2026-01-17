@@ -85,12 +85,13 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - monitoring-network
+      - monitoring
 
 volumes:
   prometheus_data:
   grafana_data:
 
 networks:
-  monitoring-network:
-    external: true  # Connect to existing monitoring network
+  monitoring:
+    driver: bridge
+    external: false  # Created by this compose file for external services
