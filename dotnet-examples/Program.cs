@@ -1,4 +1,3 @@
-using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -43,7 +42,6 @@ builder.Services.AddOpenTelemetry()
         .AddSqlClientInstrumentation(options =>
         {
             options.SetDbStatementForText = true;
-            options.SetDbStatementForStoredProcedure = true;
             options.RecordException = true;
         })
         .AddSource(activitySource.Name)
@@ -145,4 +143,4 @@ app.MapGet("/api/error", () =>
     throw new InvalidOperationException("This is a test error for OpenTelemetry");
 });
 
-app.Run();
+app.Run();app.Run();
