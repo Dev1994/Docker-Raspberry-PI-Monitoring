@@ -63,6 +63,26 @@ services:
       - /:/rootfs:ro
       - /:/host:ro,rslave
 
+  otel-collector:
+    container_name: monitoring-otel-collector
+    image: otel/opentelemetry-collector-contrib:latest
+    hostname: rpi-otel-collector
+    restart: unless-stopped
+    networks:
+      - internal
+      - monitoring  # Available on shared network
+    expose:
+      - 4317  # OTLP gRPC receiver
+      - 4318  # OTLP HTTP receiver
+      - 8888  # Prometheus metrics exposed by the collector
+      - 8889  # Prometheus exporter metrics
+    ports:
+      - "4317:4317"  # Expose OTLP gRPC for external .NET API
+      - "4318:4318"  # Expose OTLP HTTP for external .NET API
+    volumes:
+      - ./otel-collector/otel-collector-config.yaml:/etc/otelcol-contrib/otel-collector-config.yaml
+    command: ["--config=/etc/otelcol-contrib/otel-collector-config.yaml"]
+
   prometheus:
     container_name: monitoring-prometheus
     image: prom/prometheus:latest
@@ -83,11 +103,16 @@ services:
     depends_on:
       - cadvisor
       - node-exporter
+      - otel-collector
     links:
       - cadvisor:cadvisor
       - node-exporter:node-exporter
+      - otel-collector:otel-collector
 
 networks:
   internal:
     driver: bridge
-s
+  # Shared network for external applications
+  monitoring:
+    driver: bridge
+    external: false

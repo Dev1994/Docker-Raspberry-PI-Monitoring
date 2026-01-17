@@ -6,13 +6,14 @@ If you find this repository useful, please consider giving it a star. Your suppo
 
 ## Introduction
 
-Introducing the Raspberry Pi monitoring solution using Grafana, Prometheus, Cadvisor, and Node-Exporter Stack! This project aims to provide a comprehensive and user-friendly way to monitor the performance of your Raspberry Pi. With Grafana's intuitive dashboards, you can easily visualize system metrics collected by Prometheus and Cadvisor, while Node-Exporter provides valuable information about the Raspberry Pi's hardware and operating system. The combination of these tools results in a powerful and efficient monitoring solution that will give you complete visibility into your system's health. Check out the project and take your Raspberry Pi monitoring to the next level !
+Introducing the comprehensive Raspberry Pi and Application monitoring solution using Grafana, Prometheus, OpenTelemetry, Cadvisor, and Node-Exporter Stack! This project provides a complete monitoring platform for your Raspberry Pi infrastructure and .NET applications. With Grafana's intuitive dashboards, you can visualize system metrics collected by Prometheus and Cadvisor, hardware information from Node-Exporter, and application telemetry data from your .NET Web APIs through OpenTelemetry. The combination of these tools results in a powerful and efficient monitoring solution that gives you complete visibility into your system's health, application performance, and business metrics.
 
-This repository contains a `docker-compose` file to run a Raspberry PI monitoring stack. It is based on the following projects:
-- [Prometheus](https://prometheus.io/)
-- [Grafana](http://grafana.org/)
-- [cAdvisor](https://github.com/google/cadvisor)
-- [NodeExporter](https://github.com/prometheus/node_exporter)
+This repository contains a `docker-compose` file to run a complete monitoring stack. It is based on the following projects:
+- [Prometheus](https://prometheus.io/) - Metrics collection and storage
+- [Grafana](http://grafana.org/) - Visualization and dashboards
+- [OpenTelemetry Collector](https://opentelemetry.io/) - Application observability and telemetry
+- [cAdvisor](https://github.com/google/cadvisor) - Container monitoring
+- [NodeExporter](https://github.com/prometheus/node_exporter) - Hardware and OS metrics
 
 ## Prerequisites
 
@@ -48,11 +49,15 @@ docker-compose up -d
 ```
 
 This will start all the containers and make them available on the host machine.
-<br/>The following ports are used (only Grafana is exposed on the host machine):
-- 3000: Grafana
-- 9090: Prometheus
-- 8080: cAdvisor
-- 9100: NodeExporter
+<br/>The following ports are used:
+- **3000**: Grafana (Web UI - exposed to host)
+- **4317**: OpenTelemetry Collector gRPC endpoint (exposed to host for .NET APIs)
+- **4318**: OpenTelemetry Collector HTTP endpoint (exposed to host for .NET APIs)
+- 9090: Prometheus (internal)
+- 8080: cAdvisor (internal)
+- 9100: NodeExporter (internal)
+- 8888: OpenTelemetry Collector internal metrics (internal)
+- 8889: OpenTelemetry Collector Prometheus exporter (internal)
 
 The Grafana dashboard can be accessed by navigating to `http://<host-ip>:3000` in your browser for example `http://192.168.1.100:3000`.
 <br/>The default username and password are both `admin`. You will be prompted to change the password on the first login.
@@ -66,13 +71,84 @@ If you would like to change which targets should be monitored, you can edit the 
 
 In order to check if the stack is running correctly, you can run the following command:
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 View the logs of a specific container by running the following command:
 ```bash
 docker logs -f <container-name>
 ```
+
+**Note**: After making configuration changes, restart the stack:
+```bash
+sudo docker compose down && sudo docker compose up -d
+```
+
+## .NET Web API Monitoring with OpenTelemetry
+
+This stack includes OpenTelemetry Collector support for monitoring .NET Web APIs with distributed tracing, custom metrics, and comprehensive observability.
+
+### Quick Setup for .NET APIs
+
+1. **Install Required NuGet Packages** in your .NET Web API:
+```bash
+dotnet add package OpenTelemetry.Extensions.Hosting
+dotnet add package OpenTelemetry.Instrumentation.AspNetCore
+dotnet add package OpenTelemetry.Instrumentation.Http
+dotnet add package OpenTelemetry.Exporter.OpenTelemetryProtocol
+```
+
+2. **Configure OpenTelemetry** in your `Program.cs` (see [complete example](dotnet-examples/Program.cs)):
+```csharp
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter(options => {
+            options.Endpoint = new Uri("http://localhost:4317");
+        }))
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddOtlpExporter(options => {
+            options.Endpoint = new Uri("http://localhost:4317");
+        }));
+```
+
+3. **Configure OTLP Endpoint** (choose based on your deployment):
+   - **Local development**: `http://localhost:4317`
+   - **Same Docker network**: `http://otel-collector:4317`
+   - **External Docker containers**: `http://host.docker.internal:4317` (Windows/Mac) or `http://172.17.0.1:4317` (Linux)
+   - **External APIs on different hosts**: `http://YOUR_HOST_IP:4317`
+
+### Features Included
+
+✅ **Distributed Tracing** - Track requests across services  
+✅ **Custom Metrics** - Business-specific measurements  
+✅ **Automatic Instrumentation** - ASP.NET Core, HTTP, SQL monitoring  
+✅ **Error Tracking** - Exception monitoring and alerting  
+✅ **Performance Monitoring** - Request duration, throughput, etc.
+
+### Complete Examples
+
+Check the [dotnet-examples/](dotnet-examples/) directory for:
+- Complete `Program.cs` configuration
+- Custom metrics and tracing examples
+- Configuration settings
+- Docker deployment guidance
+
+### External Containers Support
+
+🔗 **Your .NET application runs in a separate Docker project?** No problem!
+
+The OpenTelemetry Collector is configured to accept connections from external containers through:
+- **Host network exposure**: Ports 4317/4318 are exposed to the host
+- **Shared network support**: Join the `monitoring` network for direct container communication
+
+**Quick connection options**:
+1. **Host network** (works immediately): `http://host.docker.internal:4317`
+2. **Shared network** (recommended for production): `http://monitoring-otel-collector:4317`
+
+For detailed setup instructions, see [External Container Setup Guide](dotnet-examples/External-Container-Setup.md).
 
 ## Add Data Sources and Dashboards
 
