@@ -49,8 +49,11 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
     volumes:
       - ./AppHost/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./AppHost/dashboard-provider.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./AppHost/api-dashboard.json:/var/lib/grafana/dashboards/api-dashboard.json:ro
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
     healthcheck:
@@ -59,7 +62,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Your .NET Web API
+  # Your .NET Web API (configured for separate Docker Compose setup)
   webapi:
     build:
       context: .
@@ -70,21 +73,24 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - OpenTelemetry__ServiceName=YourWebApi
       - OpenTelemetry__ServiceVersion=1.0.0
-      - OpenTelemetry__OtlpEndpoint=http://otel-collector:4318  # Use HTTP endpoint
-    depends_on:
-      otel-collector:
-        condition: service_healthy
+      - OpenTelemetry__OtlpEndpoint=http://otel-collector:4317  # Use service name
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=YourWebApi,service.version=1.0.0
+      - OTEL_LOG_LEVEL=debug
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - monitoring-network
 
 volumes:
   prometheus_data:
   grafana_data:
 
 networks:
-  default:
-    name: monitoring-network
+  monitoring-network:
+    external: true  # Connect to existing monitoring network
