@@ -49,3 +49,10 @@ datasources:
   # <bool> allow users to edit datasources from the UI.
   editable: true
   uid: t4f0shgRk
+
+- name: Jaeger                  # Display name in Grafana
+  type: jaeger                  # Datasource type for distributed tracing
+  access: proxy                # Access mode (proxy through Grafana server)
+  url: http://jaeger:16686      # Jaeger UI URL (container network)
+  uid: jaeger                  # Unique identifier for dashboard references
+  editable: true               # Allow editing in Grafana UI
