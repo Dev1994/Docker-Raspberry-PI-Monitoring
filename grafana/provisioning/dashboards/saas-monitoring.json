@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -97,7 +97,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(http_server_request_duration_seconds_count[1m]))",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{http_route!=\"/health\"}[1m]))",
           "legendFormat": "Total RPS",
           "refId": "A"
         }
@@ -168,7 +168,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{http_route!=\"/health\"}[1m])) by (le)) * 1000",
           "legendFormat": "P95",
           "refId": "A"
         }
@@ -241,7 +241,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~\"4..|5..\"}[1m])) / sum(rate(http_server_request_duration_seconds_count[1m])) * 100",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~\"4..|5..\",http_route!=\"/health\"}[1m])) / sum(rate(http_server_request_duration_seconds_count{http_route!=\"/health\"}[1m])) * 100",
           "legendFormat": "Error Rate",
           "refId": "A"
         }
@@ -312,7 +312,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(http_server_request_duration_seconds_count[5m]))",
+          "expr": "sum(increase(http_server_request_duration_seconds_count{http_route!=\"/health\"}[5m]))",
           "legendFormat": "Active",
           "refId": "A"
         }
@@ -422,7 +422,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by(http_route) (rate(http_server_request_duration_seconds_count[1m]))",
+          "expr": "sum by(http_route) (rate(http_server_request_duration_seconds_count{http_route!=\"/health\"}[1m]))",
           "legendFormat": "{{http_route}}",
           "refId": "A"
         }
@@ -460,14 +460,15 @@
       },
       "id": 6,
       "options": {
+        "displayLabels": [
+          "percent"
+        ],
         "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true,
-          "values": [
-            "value",
-            "percent"
-          ]
+          "calcs": [],
+          "displayMode": "hidden",
+          "placement": "right",
+          "showLegend": false,
+          "values": []
         },
         "pieType": "pie",
         "reduceOptions": {
@@ -480,7 +481,7 @@
         "sort": "desc",
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -491,8 +492,10 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by(http_response_status_code) (increase(http_server_request_duration_seconds_count[5m]))",
+          "editorMode": "builder",
+          "expr": "sum by(http_response_status_code) (increase(http_server_request_duration_seconds_count{http_route!=\"/health\"}[24h]))",
           "legendFormat": "{{http_response_status_code}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -601,7 +604,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by(http_route) (http_server_request_duration_seconds_count)",
+          "expr": "sum by(http_route) (http_server_request_duration_seconds_count{http_route!=\"/health\"})",
           "legendFormat": "{{http_route}}",
           "refId": "A"
         }
@@ -698,7 +701,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{http_route!=\"/health\"}[1m])) by (le)) * 1000",
           "legendFormat": "P95",
           "refId": "A"
         },
@@ -707,7 +710,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.50, sum(rate(http_server_request_duration_seconds_bucket[1m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_request_duration_seconds_bucket{http_route!=\"/health\"}[1m])) by (le)) * 1000",
           "legendFormat": "P50",
           "refId": "B"
         },
@@ -716,7 +719,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(http_server_request_duration_seconds_sum[1m])) / sum(rate(http_server_request_duration_seconds_count[1m])) * 1000",
+          "expr": "sum(rate(http_server_request_duration_seconds_sum{http_route!=\"/health\"}[1m])) / sum(rate(http_server_request_duration_seconds_count{http_route!=\"/health\"}[1m])) * 1000",
           "legendFormat": "Average",
           "refId": "C"
         }
@@ -910,7 +913,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by(le, http_route) (rate(http_server_request_duration_seconds_bucket[1m])))",
+          "expr": "histogram_quantile(0.95, sum by(le, http_route) (rate(http_server_request_duration_seconds_bucket{http_route!=\"/health\"}[1m])))",
           "legendFormat": "P95 {{http_route}}",
           "refId": "A"
         }
