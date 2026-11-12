@@ -44,11 +44,12 @@ exporters:
     const_labels:
       environment: "production"
 
-  # Optional: Export traces to Jaeger (uncomment if you want distributed tracing)
-  # jaeger:
-  #   endpoint: jaeger:14250
-  #   tls:
-  #     insecure: true
+  # Forward traces to Jaeger over OTLP gRPC. Apps send traces to this collector
+  # (not directly to Jaeger), so this exporter is required for Jaeger to see them.
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
 
   # Debug exporter for debugging
   debug:
@@ -59,7 +60,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resource, batch]
-      exporters: [debug]  # Add jaeger here if you want trace visualization
+      exporters: [otlp/jaeger, debug]
 
     metrics:
       receivers: [otlp, prometheus]
